@@ -154,7 +154,7 @@ mean_r2_score = r2_scores.mean()
 print("Mean R² score:", mean_r2_score)
 
 # Load test data
-test_file_path = "test.csv"
+test_file_path = "./test.csv"
 test_data = pd.read_csv(test_file_path)
 
 # Handle missing values in test data
