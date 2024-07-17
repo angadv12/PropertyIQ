@@ -1,3 +1,5 @@
 .DS_Store
 
+/frontend/node_modules/
+
 /mL_model/.ipynb_checkpoints/

@@ -7,6 +7,7 @@ from xgboost import XGBRegressor
 from sklearn.preprocessing import LabelEncoder
 import pandas as pd
 import numpy as np
+import joblib
 
 # LOAD TRAINING DATA #
 data=pd.read_csv('train.csv')
@@ -20,11 +21,20 @@ quality_mapping = {
         'Fa': 2,
         'Po': 1,
     }
-quality_features = ['ExterQual', 'ExterCond', 'HeatingQC', 'KitchenQual']
-col_keep_mode_impute = ['MSZoning', 'Utilities', 'Electrical', 'Exterior1st', 'Exterior2nd', 'KitchenQual', 'Functional', 'SaleType']
-col_keep_zero_fill = ['BsmtFinSF1', 'BsmtFinSF2', 'BsmtUnfSF', 'TotalBsmtSF',
-                          'BsmtFullBath', 'BsmtHalfBath', 'GarageCars', 'GarageArea']
-
+quality_features = ['ExterQual'] 
+col_keep_mode_impute = ['Utilities', 'Exterior1st', 'Exterior2nd', 'SaleType'] 
+col_keep_zero_fill = ['BsmtUnfSF', 'TotalBsmtSF',
+                          'GarageCars', 'GarageArea']
+cols_to_drop = ['LandSlope', 'LotFrontage', 'Alley', 'MasVnrType', 'MasVnrArea', 'BsmtQual',
+       'BsmtCond', 'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2',
+       'FireplaceQu', 'GarageType', 'GarageYrBlt', 'GarageFinish',
+       'GarageQual', 'GarageCond', 'PoolQC', 'Fence', 'MiscFeature', 
+       'Condition1', 'ScreenPorch', 'SaleCondition', 'OpenPorchSF', 'Functional', 
+       'BsmtFinSF1', 'WoodDeckSF', 'MSSubClass', 'Condition2', '1stFlrSF', 'Street', '2ndFlrSF', 
+       'OverallCond', 'BsmtFinSF2', 'MiscVal', 'SaleType', 'BsmtHalfBath', '3SsnPorch', 'EnclosedPorch', 
+       'LandContour', 'HouseStyle', 'BsmtFullBath', 'Neighborhood', 'HeatingQC', 'LowQualFinSF', 'LotShape', 
+       'MoSold', 'ExterCond', 'Electrical', 'RoofMatl', 'MSZoning', 'TotRmsAbvGrd', 'KitchenQual']
+data = data.drop(columns=cols_to_drop)
 # handle missing values
 def handle_missing_values(df):
     missing_data = df.isnull().sum()
@@ -106,7 +116,7 @@ def objective(trial):
 
 # run optuna study to tune hyperparameters
 study = optuna.create_study(direction='minimize', sampler=optuna.samplers.RandomSampler(seed=42))
-study.optimize(objective, n_trials=100)
+study.optimize(objective, n_trials=1000) #1000 trials
 
 # print best hyperparameters and score
 best_params = study.best_params
@@ -142,20 +152,32 @@ best_model = XGBRegressor(
 # fitting model on training data
 best_model.fit(X_train, y_train)
 
+# Save the model
+feature_names = X.columns.tolist()
+joblib.dump(feature_names, 'feature_names.joblib')
+joblib.dump(best_model, 'best_xgb_model.joblib')
+print("Model saved as 'best_xgb_model.joblib'")
+
+# Load the model (for demonstration)
+loaded_model = joblib.load('best_xgb_model.joblib')
+print("Model loaded successfully")
+
 # evaluate model and show metrics
-y_pred = best_model.predict(X_test)
+y_pred = loaded_model.predict(X_test)
 
 print('mae: ', mean_absolute_error(y_test, y_pred))
 print('mse: ', mean_squared_error(y_test, y_pred))
 print('rmse: ', np.sqrt(mean_squared_error(y_test, y_pred)))
 print('R²: ', r2_score(y_test, y_pred))
-r2_scores = cross_val_score(best_model, X_test, y_test, n_jobs=-1, cv=5, scoring='r2')
+r2_scores = cross_val_score(loaded_model, X_test, y_test, n_jobs=-1, cv=5, scoring='r2')
 mean_r2_score = r2_scores.mean()
 print("Mean R² score:", mean_r2_score)
 
 # Load test data
 test_file_path = "./test.csv"
 test_data = pd.read_csv(test_file_path)
+
+test_data = test_data.drop(columns=cols_to_drop)
 
 # Handle missing values in test data
 test_data = handle_missing_values(test_data)
@@ -170,8 +192,8 @@ test_data = convert_to_numerical(test_data)
 X_test_final = test_data.drop('Id', axis=1)
 test_ids = test_data['Id']
 
-# Make predictions using the best model
-preds = best_model.predict(X_test_final)
+# Make predictions using the loaded model
+preds = loaded_model.predict(X_test_final)
 
 # Create submission dataframe
 output = pd.DataFrame({'Id': test_ids, 'SalePrice': preds})
