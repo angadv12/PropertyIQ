@@ -12,7 +12,7 @@ PropertyIQ is a platform where users can list their properties as well as view o
 
 - Create listings for your own properties
 ![Alt text](/frontend/src/assets/CreateListing.gif "Your Listings View")
-- Predict the price of your listing, powered by ML
+- Predict the price of your listing, powered by Extreme Gradient Boosting Model
 ![Alt text](/frontend/src/assets/PredictPrice.gif "Predict Price View")
 - User authentication and profile management
 ![Alt text](/frontend/src/assets/ProfileView.gif "Profile View")
