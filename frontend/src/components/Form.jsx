@@ -99,7 +99,7 @@ function Form({ route, method }) {
             </button>
 
             {method === 'login' && (
-                <div className="w-11/12 mt-4">
+                <div className="mt-4">
                     <GoogleLogin
                         onSuccess={handleGoogleLoginSuccess}
                         onError={handleGoogleLoginFailure}
