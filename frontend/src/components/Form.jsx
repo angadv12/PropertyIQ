@@ -1,10 +1,14 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '../constants';
 import { FaArrowRightToBracket } from 'react-icons/fa6';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { FadeLoader } from 'react-spinners';
+import { GoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
 
 function Form({ route, method }) {
     const [username, setUsername] = useState('');
@@ -14,6 +18,11 @@ function Form({ route, method }) {
     const navigate = useNavigate();
 
     const name = method === 'login' ? "Login" : "Register"
+
+    Form.propTypes = {
+        route: PropTypes.string.isRequired,
+        method: PropTypes.oneOf(['login', 'register']).isRequired,
+    };
 
     const handleSubmit = async (e) => {
         setLoading(true)
@@ -34,6 +43,29 @@ function Form({ route, method }) {
         } finally {
             setLoading(false)
         }
+    }
+
+    const handleGoogleLoginSuccess = async (credentialResponse) => {
+        try {
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/google-login/`, { 
+                token: credentialResponse.credential
+            });
+            localStorage.setItem(ACCESS_TOKEN, res.data.access);
+            localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
+            navigate('/');
+        } catch (error) {
+            console.error("Google login error:", error);
+            toast.error('Google login failed.', { position: 'top-center', autoClose: 5000 });
+        }
+    };
+
+    const handleGoogleLoginFailure = (error) => {
+        console.error("Google login failed:", error);
+        toast.error('Google login failed.', { position: 'top-center', autoClose: 5000 });
+    };
+
+    if (loading){
+        return <FadeLoader />
     }
 
     return <>
@@ -65,6 +97,15 @@ function Form({ route, method }) {
             >
                 {name} <FaArrowRightToBracket className='ml-2'/>
             </button>
+
+            {method === 'login' && (
+                <div className="w-11/12 mt-4">
+                    <GoogleLogin
+                        onSuccess={handleGoogleLoginSuccess}
+                        onError={handleGoogleLoginFailure}
+                    />
+                </div>
+            )}
         </form>
     </div>
     </>

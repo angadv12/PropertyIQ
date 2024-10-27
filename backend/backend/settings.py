@@ -59,7 +59,42 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'predictor',
+
+    # allauth
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
+
+SITE_ID = 1  # Required by django-allauth
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'APP': {
+            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+            'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
+            'key': ''
+        }
+    }
+}
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_ON_GET = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -70,6 +105,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # Required by django-allauth
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -147,6 +185,28 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True  # For development only
 CORS_ALLOW_CREDENTIALS = True
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'unsafe-none'
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

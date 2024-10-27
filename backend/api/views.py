@@ -7,17 +7,46 @@ from predictor.serializers import HouseListingSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from predictor.models import HouseListing
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.decorators import api_view, permission_classes
+
+from google.oauth2 import id_token
+from google.auth.transport import requests
+import os
 
 # Create your views here.
-# class UserDetailsView(generics.RetrieveAPIView):
-#     queryset = User.objects.all()
-#     serializer_class = UserSerializer
-#     permission_classes = [IsAuthenticated]
 
-#     def get(self, request, *args, **kwargs):
-#         serializer = self.get_serializer(request.user)
-#         return Response(serializer.data)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def google_login(request):
+    token = request.data.get("token")
+    try:
+        # verify the Google OAuth2 token
+        idinfo = id_token.verify_oauth2_token(token, requests.Request(), os.getenv('GOOGLE_CLIENT_ID'))
 
+        # extract user information
+        email = idinfo.get('email')
+        name = idinfo.get('name')
+
+        # check if the user exists; if not, create a new user
+        user, created = User.objects.get_or_create(username=email, defaults={'email': email, 'first_name': name})
+
+        # issue JWT tokens for the authenticated user
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        # send the tokens back to the frontend
+        return Response({
+            "access": access_token,
+            "refresh": refresh_token,
+            "user_id": user.id
+        }, status=status.HTTP_200_OK)
+
+    except ValueError as e:
+        # token is invalid
+        return Response({"error": "Invalid token", "details": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+    
 class CreateUserView(generics.CreateAPIView):
   queryset = User.objects.all()
   serializer_class = UserSerializer

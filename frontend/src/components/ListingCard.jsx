@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import PropTypes from 'prop-types';
 
 const ListingCard = ({listing, onDelete}) => {
     const formattedDate = new Date(listing.created_at).toLocaleString("en-US").split(",")[0]
@@ -50,7 +51,7 @@ const ListingCard = ({listing, onDelete}) => {
                         >
                             View
                         </Link>
-                        <p className="absolute right-12"> Posting User's ID: {listing.author}</p>
+                        <p className="absolute right-12"> Owner&apos;s ID: {listing.author}</p>
                     </> )
                 }
                 
@@ -59,5 +60,19 @@ const ListingCard = ({listing, onDelete}) => {
     </div>
     
 )}
+ListingCard.propTypes = {
+    listing: PropTypes.shape({
+        created_at: PropTypes.string.isRequired,
+        HouseImage: PropTypes.string,
+        address: PropTypes.string.isRequired,
+        city: PropTypes.string.isRequired,
+        state: PropTypes.string.isRequired,
+        zipcode: PropTypes.string.isRequired,
+        predicted_price: PropTypes.number,
+        id: PropTypes.number.isRequired,
+        author: PropTypes.string.isRequired,
+    }).isRequired,
+    onDelete: PropTypes.func,
+};
 
 export default ListingCard;
